@@ -1,0 +1,46 @@
+---
+# Lima VM: agt-agent-sandbox
+# Simulating Hostinger KVM2 VPS specs (with extra disk for testing)
+
+# Minimal Ubuntu - cloud image, no desktop
+# Supports both Apple Silicon (aarch64) and Intel Macs (x86_64)
+images:
+  - location: >-
+      https://cloud-images.ubuntu.com/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-arm64.img
+    arch: "aarch64"
+  - location: >-
+      https://cloud-images.ubuntu.com/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img
+    arch: "x86_64"
+
+# KVM2-like specs: 2 vCPU, 8GB RAM, 250GB disk (extra for multi-project testing)
+cpus: 2
+memory: "8GiB"
+disk: "250GiB"
+
+# No mounts - we'll copy files in via scp/limactl copy
+mounts: []
+
+# Minimal provisioning - just ensure we can build toybox and have bun for LLM agents
+provision:
+  - mode: system
+    script: |
+      #!/bin/bash
+      set -eux -o pipefail
+      export DEBIAN_FRONTEND=noninteractive
+      apt-get update
+      apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
+        ca-certificates \
+        unzip \
+        curl
+  - mode: user
+    script: |
+      #!/bin/bash
+      set -eu
+      echo "Installing bun..."
+      mkdir -p "$HOME/.bun"
+      curl -fsSL https://bun.sh/install | BUN_INSTALL="$HOME/.bun" bash
+      export PATH="$HOME/.bun/bin:$PATH"
+      echo "Bun installed at: $HOME/.bun/bin/bun"
+      "$HOME/.bun/bin/bun" --version

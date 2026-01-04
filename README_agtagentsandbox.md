@@ -1,6 +1,15 @@
 # AGT Agent Sandbox
 
-This project uses `toybox` to explore VM-based agent sandboxing with chroot jails. It is designed to be self-contained within the `agt_agent_sandbox/` directory to avoid conflicts with upstream `toybox` development.
+This is a fork of `toybox` that serves as the foundation for jailing LLM agents (starting with opencode, later others) in isolated chroot environments on a Lima VM. The primary purpose is to provide secure execution contexts for AI agents while maintaining security updates from upstream `toybox`.
+
+## Purpose
+
+- **Jail LLM Agents**: Run code-generation and tool-use agents (like opencode) safely in isolated chroot jails
+- **Filesystem Isolation**: Agents cannot access the host filesystem or affect other agents' environments
+- **Concurrent Execution**: Multiple agents can run simultaneously in separate jails
+- **Security**: Track and apply upstream `toybox` security updates while adding agent-specific tooling
+
+The project is designed to be self-contained within the `agt_agent_sandbox/` directory to avoid conflicts with upstream `toybox` development.
 
 ## Setup
 
@@ -36,3 +45,14 @@ All lifecycle commands are managed via `just`:
 Since this project uses the `vz` driver on macOS, traditional `limactl snapshot` commands are currently unimplemented. To preserve a clean state:
 1. Use `just lima-clone clean-backup` to create a "gold image".
 2. Or use `limactl factory-reset agt_agent_sandbox` to return to the initial provisioned state.
+
+## Testing & Verification
+
+The system includes automated and manual testing procedures to verify agent jailing works correctly:
+
+- **Automated**: Run `just lima-verify-run` for a complete verification (deploys jails + runs concurrency test)
+- **Manual**: See `tests/exploratory/manual_jail_test.md` for step-by-step procedures to:
+  - Verify binaries are installed in the Lima VM
+  - Test chroot jail isolation
+  - Confirm concurrent execution of multiple agents
+  - Check filesystem isolation between jails
