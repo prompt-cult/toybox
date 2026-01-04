@@ -62,12 +62,17 @@ source ~/.zshrc
 
 ```bash
 cd /path/to/toybox
+cp .envrc.example .envrc # Create local env config (gitignored)
 direnv allow    # Approve the .envrc file
 mise trust      # Trust mise.toml
 mise install    # Install tools (just)
 ```
 
 After this, `just` will be available whenever you're in this directory.
+
+## Build Artifacts
+
+Build outputs (binaries) should be placed in `dist/`, which is ignored by git.
 
 ## Commands
 

@@ -9,3 +9,6 @@ syntax: glob
 /toybox
 /toybox_unstripped
 .tmp
+dist/
+.envrc
+
