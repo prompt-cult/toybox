@@ -12,7 +12,7 @@ check_deps() {
     echo "Checking dependencies..."
     # Only update if necessary (using a 1-day cache check would be better, but -qq is quiet)
     sudo apt-get update -qq
-    sudo apt-get install -qq -y build-essential git ca-certificates
+    sudo apt-get install -qq -y build-essential git ca-certificates libssl-dev
 }
 
 setup_repo() {
@@ -57,6 +57,11 @@ build_toybox() {
     if [ ! -f ".config" ]; then
         echo "Initializing default config..."
         make defconfig
+    fi
+    # Enable HTTPS support for wget via OpenSSL
+    if grep -q "# CONFIG_TOYBOX_LIBCRYPTO is not set" .config; then
+        sed -i 's/# CONFIG_TOYBOX_LIBCRYPTO is not set/CONFIG_TOYBOX_LIBCRYPTO=y/' .config
+        echo "Enabled TOYBOX_LIBCRYPTO for HTTPS wget support."
     fi
     
     # Perform incremental build (no make clean)
