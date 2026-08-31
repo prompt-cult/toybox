@@ -2,15 +2,17 @@
 # No buildkit-only features: also builds with the legacy builder (e.g. colima).
 FROM alpine:3.22 AS build
 
-RUN apk add --no-cache build-base openssl-dev openssl-libs-static ca-certificates
+RUN apk add --no-cache build-base bash linux-headers openssl-dev openssl-libs-static ca-certificates
 
 WORKDIR /src
 COPY . .
 
 RUN make defconfig \
- && sed -i 's/# CONFIG_TOYBOX_LIBCRYPTO is not set/CONFIG_TOYBOX_LIBCRYPTO=y/' .config \
+ && sed -i -e 's/# CONFIG_TOYBOX_LIBCRYPTO is not set/CONFIG_TOYBOX_LIBCRYPTO=y/' \
+           -e 's/# CONFIG_SH is not set/CONFIG_SH=y/' .config \
  && grep -q '^CONFIG_TOYBOX_LIBCRYPTO=y' .config \
- && make -j"$(nproc)" LDFLAGS="--static" \
+ && grep -q '^CONFIG_SH=y' .config \
+ && make -j"$(nproc)" CFLAGS="-U_FORTIFY_SOURCE" LDFLAGS="--static" \
  && ./toybox --version \
  && mkdir -p /rootfs/bin /rootfs/etc/ssl/certs \
  && cp toybox /rootfs/bin/toybox \
