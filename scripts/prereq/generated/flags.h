@@ -349,16 +349,6 @@
 #undef FLAG_f
 #endif
 
-// tee ia ia
-#undef OPTSTR_tee
-#define OPTSTR_tee "ia"
-#ifdef CLEANUP_tee
-#undef CLEANUP_tee
-#undef FOR_tee
-#undef FLAG_a
-#undef FLAG_i
-#endif
-
 // tr ^<1>2Ccstd[+cC] ^<1>2Ccstd[+cC]
 #undef OPTSTR_tr
 #define OPTSTR_tr "^<1>2Ccstd[+cC]"
@@ -401,9 +391,9 @@
 #undef FLAG_L
 #endif
 
-// xargs ^a:E:P#<0(null)=1optr(no-run-if-empty)n#<1(max-args)s#0[!0E] ^a:E:P#<0(null)=1optr(no-run-if-empty)n#<1(max-args)s#0[!0E]
+// xargs ^(process-slot-var):a:E:P#<0(null)=1optr(no-run-if-empty)n#<1(max-args)s#0[!0E] ^(process-slot-var):a:E:P#<0(null)=1optr(no-run-if-empty)n#<1(max-args)s#0[!0E]
 #undef OPTSTR_xargs
-#define OPTSTR_xargs "^a:E:P#<0(null)=1optr(no-run-if-empty)n#<1(max-args)s#0[!0E]"
+#define OPTSTR_xargs "^(process-slot-var):a:E:P#<0(null)=1optr(no-run-if-empty)n#<1(max-args)s#0[!0E]"
 #ifdef CLEANUP_xargs
 #undef CLEANUP_xargs
 #undef FOR_xargs
@@ -417,6 +407,7 @@
 #undef FLAG_P
 #undef FLAG_E
 #undef FLAG_a
+#undef FLAG_process_slot_var
 #endif
 
 #ifdef FOR_basename
@@ -744,15 +735,6 @@
 #define FLAG_f (1LL<<4)
 #endif
 
-#ifdef FOR_tee
-#define CLEANUP_tee
-#ifndef TT
-#define TT this.tee
-#endif
-#define FLAG_a (1LL<<0)
-#define FLAG_i (1LL<<1)
-#endif
-
 #ifdef FOR_tr
 #define CLEANUP_tr
 #ifndef TT
@@ -807,6 +789,7 @@
 #define FLAG_P (1LL<<7)
 #define FLAG_E (1LL<<8)
 #define FLAG_a (1LL<<9)
+#define FLAG_process_slot_var (1LL<<10)
 #endif
 
 #undef OPTSTR_ascii

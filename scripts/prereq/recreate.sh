@@ -5,7 +5,6 @@
 # Detect toybox prerequisites using record-commands
 
 mkroot/record-commands make clean defconfig toybox &&
-sed -i 's/default y/default n/' generated/Config.probed || exit 1
 CMDLIST="$(echo toybox; echo ln; ./toybox cut -DF 1 log.txt | sort -u | grep -v nproc)"
 {
   for i in $(tr '[:lower:]' '[:upper:]' <<<"$CMDLIST")
@@ -16,16 +15,18 @@ CMDLIST="$(echo toybox; echo ln; ./toybox cut -DF 1 log.txt | sort -u | grep -v 
 
 # Create minimal dependency-free build
 
-make clean allnoconfig KCONFIG_ALLCONFIG=prereq.mini
-make toybox
-cat > scripts/prereq/build.sh << 'EOF'
+rm -rf generated &&
+KCONFIG_ALLCONFIG=prereq.mini scripts/genconfig.sh -n &&
+scripts/make.sh &&
+cat > scripts/prereq/build.sh << 'EOF' &&
 #!/bin/sh
 
 BUILD='cc -funsigned-char -I scripts/prereq -I . -Os -ffunction-sections -fdata-sections -fno-asynchronous-unwind-tables -fno-strict-aliasing -DTOYBOX_VERSION=""'
 LINK=''
 EOF
-grep -A999 FILES= generated/build.sh >> scripts/prereq/build.sh
-sed -i 's/ toybox$/&-prereq/' scripts/prereq/build.sh
+grep -A999 FILES= generated/build.sh >> scripts/prereq/build.sh &&
+sed -i 's/ toybox$/&-prereq/' scripts/prereq/build.sh &&
+chmod +x scripts/prereq/build.sh || exit 1
 
 # harvest stripped down headers
 
@@ -37,5 +38,5 @@ FORS="$(sed -n 's/#define FOR_//p' $(grep -o 'toys/[^/]*/[^.]*\.c' scripts/prere
 sed -En '1,/^$/p;/\/\/ ('"$FORS"') /,/^$/p;/#ifdef FOR_('"$FORS"')$/,/^$/p' generated/flags.h > scripts/prereq/generated/flags.h
 egrep "OPTSTR_($(egrep -v "($FORS)" <<<"$CMDLIST" | xargs | tr ' ' '|'))" \
   generated/flags.h >> scripts/prereq/generated/flags.h
-# TODO: slim down config.h
+# TODO: slim down config.h, force _IS_ symbols n if necessary.
 cp generated/{globals,config}.h scripts/prereq/generated/

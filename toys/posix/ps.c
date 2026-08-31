@@ -1366,10 +1366,8 @@ void ps_main(void)
       "USER:12=UID,%%sPPID,%s,STIME,TTY,TIME,ARGS=CMD", FLAG(T) ? "TCNT" :"C");
   else if (FLAG(l))
     not_o = "F,S,UID,%sPPID,C,PRI,NI,BIT,SZ,WCHAN,TTY,TIME,CMD";
-  else if (CFG_TOYBOX_ON_ANDROID)
-    sprintf(not_o = toybuf+128,
-            "USER,%%sPPID,VSIZE:10,RSS,WCHAN:10,ADDR:10,S,%s",
-            FLAG(T) ? "CMD" : "NAME");
+  else if (CFG_IS_ANDROID) sprintf(not_o = toybuf+128,
+    "USER,%%sPPID,VSIZE:10,RSS,WCHAN:10,ADDR:10,S,%s",FLAG(T) ? "CMD" : "NAME");
   sprintf(toybuf, not_o, FLAG(T) ? "PID,TID," : "PID,");
 
   // Init TT.fields. This only uses toybuf if TT.ps.o is NULL
@@ -1618,8 +1616,6 @@ static void top_common(
 
     // Don't re-fetch data if it's not time yet, just re-display existing data.
     for (;;) {
-      char was, is;
-
       if (recalc) {
         qsort(mix.tb, mix.count, sizeof(struct procpid *), (void *)ksort);
         if (!FLAG(b)) {
@@ -1728,12 +1724,11 @@ static void top_common(
         lines = header_line(lines, 0);
         // print line of header labels for currently displayed fields
         get_headers(TT.fields, pos = toybuf, sizeof(toybuf));
-        for (i = 0, is = ' '; *pos; pos++) {
-          was = is;
-          is = *pos;
-          if (isspace(was) && !isspace(is) && i++==TT.sortpos && pos!=toybuf)
-            pos[-1] = '[';
-          if (!isspace(was) && isspace(is) && i==TT.sortpos+1) *pos = ']';
+        for (i = TT.scroll; *pos; i++) {
+          while (isspace(*pos)) pos++;
+          if (pos!=toybuf && i==TT.sortpos) pos[-1] = '[';
+          while (*pos && !isspace(*pos)) pos++;
+          if (*pos && i==TT.sortpos) *pos++ = ']';
         }
         if (FLAG(b)) while (isspace(*(pos-1))) --pos;
         *pos = 0;
