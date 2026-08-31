@@ -115,22 +115,18 @@ struct tail_data {
   } *F;
 };
 
-struct tee_data {
-  void *outputs;
-  int out;
-};
-
 struct wc_data {
   unsigned long totals[5];
 };
 
 struct xargs_data {
   long s, n, P;
-  char *E, *a;
+  char *E, *a, *process_slot_var;
 
   long entries, bytes, np;
   char delim;
   FILE *tty;
+  pid_t *pids;
 };
 extern union global_union {
 	struct gzip_data gzip;
@@ -149,7 +145,6 @@ extern union global_union {
 	struct sed_data sed;
 	struct sort_data sort;
 	struct tail_data tail;
-	struct tee_data tee;
 	struct wc_data wc;
 	struct xargs_data xargs;
 } this;
