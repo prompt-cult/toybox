@@ -32,7 +32,13 @@ fi
 if [ -n "$ASAN" ]; then
   # Turn ASan on and disable most optimization to get more readable backtraces.
   # (Technically ASAN is just "-fsanitize=address" and the rest is optional.)
-  export CFLAGS="$CFLAGS -fsanitize=address -O1 -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -static-libasan"
+  # New clang (18+) renamed -static-libasan to -static-libsan; pick whichever works.
+  if echo 'int main(){}' | ${CROSS_COMPILE}${CC} -static-libsan -xc - -o /dev/null 2>/dev/null; then
+    LIBSAN="-static-libsan"
+  else
+    LIBSAN="-static-libasan"
+  fi
+  export CFLAGS="$CFLAGS -fsanitize=address -O1 -g -fno-omit-frame-pointer -fno-optimize-sibling-calls $LIBSAN"
   export NOSTRIP=1
   # Ignore leaks on exit. TODO
   export ASAN_OPTIONS="detect_leaks=0"
