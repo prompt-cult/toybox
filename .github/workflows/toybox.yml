@@ -4,14 +4,15 @@ on:
   schedule:
     - cron:  '0 2 * * *'
   push:
-    branches: [ master ]
+    branches: [ master, prompt-cult, agt-agent-sandbox ]
+  pull_request:
 
 jobs:
-  MacOS-13:
-    runs-on: macos-13
+  MacOS:
+    runs-on: macos-15
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Setup
       run: brew install gnu-sed
     - name: Configure
@@ -21,12 +22,33 @@ jobs:
     - name: Test
       run: VERBOSE=all make tests
 
-  Ubuntu-22_04:
-    runs-on: ubuntu-22.04
+  Ubuntu:
+    runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Setup
-      run: sudo apt-get install build-essential
+      run: sudo apt-get update && sudo apt-get install -y build-essential
     - name: Configure build and test
       run: VERBOSE=all CC=clang make defconfig tests
+
+  Ubuntu-openssl-wget:
+    runs-on: ubuntu-24.04
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup
+      run: sudo apt-get update && sudo apt-get install -y build-essential libssl-dev
+    - name: Configure with OpenSSL-backed wget
+      run: |
+        make defconfig
+        sed -i 's/# CONFIG_TOYBOX_LIBCRYPTO is not set/CONFIG_TOYBOX_LIBCRYPTO=y/' .config
+        grep -q '^CONFIG_TOYBOX_LIBCRYPTO=y' .config
+    - name: Build
+      run: make -j"$(nproc)"
+    - name: Test
+      run: VERBOSE=all make tests
+    - name: HTTPS smoke test
+      run: |
+        ./toybox wget -O /tmp/smoke.txt https://raw.githubusercontent.com/landley/toybox/master/README
+        head -3 /tmp/smoke.txt

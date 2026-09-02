@@ -139,6 +139,9 @@ static void wget_connect(char *host, char *port)
     TT.ctx = SSL_CTX_new(TLS_client_method());
     if (!TT.ctx) error_exit("SSL_CTX_new");
 
+    SSL_CTX_set_default_verify_paths(TT.ctx);
+    SSL_CTX_set_verify(TT.ctx, SSL_VERIFY_PEER, NULL);
+
     TT.sock = xconnectany(xgetaddrinfo(host, port, AF_UNSPEC, SOCK_STREAM, 0, 0));
 
     TT.ssl = SSL_new(TT.ctx);
@@ -151,7 +154,13 @@ static void wget_connect(char *host, char *port)
 
     SSL_set_fd(TT.ssl, TT.sock);
     if (SSL_connect(TT.ssl) == -1)
-      error_exit("SSL_set_fd: %s", ERR_error_string(ERR_get_error(), NULL));
+      error_exit("SSL_connect: %s", ERR_error_string(ERR_get_error(), NULL));
+
+    if (SSL_get_verify_result(TT.ssl) != X509_V_OK) {
+      long vr = SSL_get_verify_result(TT.ssl);
+      error_exit("TLS certificate verification failed: %s",
+                 X509_verify_cert_error_string(vr));
+    }
 
     if (FLAG(d)) printf("TLS: %s\n", SSL_get_cipher(TT.ssl));
 #endif

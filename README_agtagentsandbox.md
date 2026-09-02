@@ -56,3 +56,45 @@ The system includes automated and manual testing procedures to verify agent jail
   - Test chroot jail isolation
   - Confirm concurrent execution of multiple agents
   - Check filesystem isolation between jails
+
+## HTTPS Support in wget
+
+`toybox wget` supports HTTPS URLs when built with `TOYBOX_LIBCRYPTO=y` (OpenSSL). The build
+script (`agt_agent_sandbox/lima_build.sh`) automatically installs `libssl-dev` and enables this
+option, so HTTPS is available in the Lima VM by default.
+
+**TLS validation behaviour:** Certificates are validated against the system trust store
+(`SSL_CTX_set_default_verify_paths`). Connections to hosts with invalid or untrusted certificates
+will be rejected. Ensure the system CA bundle (`ca-certificates`) is installed and up-to-date.
+
+**Redirects:** HTTP 301/302 redirects are followed automatically (up to `--max-redirect`, default 20),
+which handles GitHub Release URLs that redirect through CDN endpoints.
+
+## Container image (GHCR)
+
+The fork publishes a minimal, from-scratch toybox container image built with a fully static
+musl + OpenSSL toybox binary (`CONFIG_TOYBOX_LIBCRYPTO=y`, so `wget https://` works):
+
+- `ghcr.io/prompt-cult/toybox:<YYYY.MM.DD-<short-sha>>` — stable line, built from the `prompt-cult` branch
+- `ghcr.io/prompt-cult/toybox:agt-<YYYY.MM.DD-<short-sha>>` — experimental agent-sandbox line, built from the `agt-agent-sandbox` branch
+
+Both are multi-arch (`linux/amd64`, `linux/arm64`) and are published by
+`.github/workflows/ghcr.yml` when a matching tag is pushed. The image is
+`FROM scratch` with the static binary as `/bin/toybox`, an `/bin/sh` applet
+symlink, and the system CA bundle baked in at `/etc/ssl/cert.pem`
+(`SSL_CTX_set_default_verify_paths` resolves it), so TLS validation works
+without a distro underneath.
+
+Usage:
+
+```sh
+docker run --rm ghcr.io/prompt-cult/toybox:<tag> sh -c 'ls / && echo hi'
+docker run --rm ghcr.io/prompt-cult/toybox:<tag> wget -O- https://raw.githubusercontent.com/landley/toybox/master/README
+```
+
+Local build (works on colima where bind mounts are unreliable — the build context is sent to the daemon):
+
+```sh
+docker build -t ghcr.io/prompt-cult/toybox:local .
+docker run --rm ghcr.io/prompt-cult/toybox:local wget -O- https://example.com
+```
